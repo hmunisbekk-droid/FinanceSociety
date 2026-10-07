@@ -32,13 +32,14 @@ export default async function HomePage() {
     <>
       {/* Hero */}
       <section className="bg-brand-900 text-white">
-        <Container className="grid gap-10 py-16 sm:py-20 lg:grid-cols-[1.2fr_1fr] lg:items-center lg:py-24">
+        <Container className="grid gap-10 py-16 sm:py-20 lg:grid-cols-[1.6fr_1fr] lg:items-center lg:py-24">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-accent-400">{site.name}</p>
-            <h1 className="mt-4 text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-              From foundation to final year:
+            {/* Sized so each half stays on one line from laptop widths up (two rows in total). */}
+            <h1 className="mt-4 text-balance text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-[2.125rem]">
+              <span className="lg:whitespace-nowrap">From foundation to final year:</span>
               <br />
-              your finance modules, in one place.
+              <span className="lg:whitespace-nowrap">your finance modules, in one place.</span>
             </h1>
             <p className="mt-5 max-w-xl text-lg text-brand-100">
               Structured study materials for every WIUT finance module, quizzes that explain the right answer, and
