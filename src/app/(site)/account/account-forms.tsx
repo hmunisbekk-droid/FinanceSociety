@@ -1,9 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
-import { Alert, Field, Input, Select } from "@/components/ui";
+import { Alert, Field, Input } from "@/components/ui";
+import { ProgrammeLevelFields, type LevelOption } from "@/components/programme-level-fields";
 import { SubmitButton } from "@/components/submit-button";
-import { PROGRAMMES, isProgramme } from "@/lib/programmes";
+import { isProgramme } from "@/lib/programmes";
 import { changePassword, updateProfile } from "./actions";
 
 export function ProfileForm({
@@ -15,7 +16,7 @@ export function ProfileForm({
   fullName: string;
   programme: string;
   levelId: string;
-  levels: Array<{ id: string; label: string }>;
+  levels: LevelOption[];
 }) {
   const [state, action] = useActionState(updateProfile, null);
   const errors = state?.fieldErrors ?? {};
@@ -29,27 +30,7 @@ export function ProfileForm({
         <Input id="fullName" name="fullName" defaultValue={fullName} autoComplete="name" required aria-invalid={!!errors.fullName} />
       </Field>
 
-      <Field label="Programme" htmlFor="programme" error={errors.programme}>
-        <Select id="programme" name="programme" defaultValue={isProgramme(programme) ? programme : ""} aria-invalid={!!errors.programme}>
-          <option value="">Choose your programme</option>
-          {PROGRAMMES.map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
-          ))}
-        </Select>
-      </Field>
-
-      <Field label="Current level" htmlFor="levelId" error={errors.levelId} hint="Your level is highlighted across the site">
-        <Select id="levelId" name="levelId" defaultValue={levelId} aria-invalid={!!errors.levelId}>
-          <option value="">Not set</option>
-          {levels.map((level) => (
-            <option key={level.id} value={level.id}>
-              {level.label}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      <ProgrammeLevelFields levels={levels} initialProgramme={isProgramme(programme) ? programme : ""} initialLevelId={levelId} errors={errors} />
 
       <SubmitButton pendingText="Saving…">Save profile</SubmitButton>
     </form>

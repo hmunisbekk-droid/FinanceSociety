@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { PROGRAMMES } from "@/lib/programmes";
+import { PROGRAMMES, resolveLevelForProgramme, type LevelRef } from "@/lib/programmes";
 import { createClient } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/site";
 
@@ -70,11 +70,17 @@ export async function signUp(_prev: AuthState | null, formData: FormData): Promi
   }
 
   const supabase = await createClient();
+
+  // CIFS → Level 3; degree programmes → Levels 4–6 (same rule as the form).
+  const { data: levelRows } = await supabase.from("levels").select("id, number");
+  const level = resolveLevelForProgramme(programme ?? "", levelId ?? "", (levelRows ?? []) as LevelRef[]);
+  if (!level.ok) return { fieldErrors: { levelId: level.message } };
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { full_name: fullName, programme: programme || null, level_id: levelId || null },
+      data: { full_name: fullName, programme: programme || null, level_id: level.levelId },
       emailRedirectTo: `${siteUrl()}/auth/callback?next=/my`,
     },
   });

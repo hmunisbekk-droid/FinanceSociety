@@ -42,7 +42,7 @@ export default async function AccountPage() {
             fullName={user.profile.full_name}
             programme={user.profile.programme ?? ""}
             levelId={user.profile.level_id ?? ""}
-            levels={levels.map((l) => ({ id: l.id, label: `${l.name} · ${l.study_year}` }))}
+            levels={levels.map((l) => ({ id: l.id, number: l.number, label: `${l.name} · ${l.study_year}` }))}
           />
         </div>
       </Card>

@@ -2,17 +2,11 @@
 
 import { useActionState } from "react";
 import { signUp } from "../actions";
-import { Alert, Field, Input, Select } from "@/components/ui";
+import { Alert, Field, Input } from "@/components/ui";
+import { ProgrammeLevelFields, type LevelOption } from "@/components/programme-level-fields";
 import { SubmitButton } from "@/components/submit-button";
-import { PROGRAMMES } from "@/lib/programmes";
 
-export function SignupForm({
-  levels,
-  domains,
-}: {
-  levels: Array<{ id: string; label: string }>;
-  domains: string[];
-}) {
+export function SignupForm({ levels, domains }: { levels: LevelOption[]; domains: string[] }) {
   const [state, action] = useActionState(signUp, null);
   const errors = state?.fieldErrors ?? {};
   const emailHint = domains.length > 0 ? `Use your WIUT email (${domains.map((d) => "@" + d).join(", ")})` : undefined;
@@ -41,29 +35,7 @@ export function SignupForm({
         />
       </Field>
 
-      <Field label="Programme" htmlFor="programme" error={errors.programme}>
-        <Select id="programme" name="programme" defaultValue="" aria-invalid={!!errors.programme}>
-          <option value="">Choose your programme</option>
-          {PROGRAMMES.map((programme) => (
-            <option key={programme} value={programme}>
-              {programme}
-            </option>
-          ))}
-        </Select>
-      </Field>
-
-      {levels.length > 0 && (
-        <Field label="Current level" htmlFor="levelId" error={errors.levelId}>
-          <Select id="levelId" name="levelId" defaultValue="" aria-invalid={!!errors.levelId}>
-            <option value="">Choose your level</option>
-            {levels.map((level) => (
-              <option key={level.id} value={level.id}>
-                {level.label}
-              </option>
-            ))}
-          </Select>
-        </Field>
-      )}
+      <ProgrammeLevelFields levels={levels} errors={errors} />
 
       <SubmitButton className="w-full" size="lg" pendingText="Creating your account…">
         Create account

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
-import { PROGRAMMES } from "@/lib/programmes";
+import { PROGRAMMES, resolveLevelForProgramme, type LevelRef } from "@/lib/programmes";
 import { createClient } from "@/lib/supabase/server";
 
 export interface AccountState {
@@ -35,12 +35,17 @@ export async function updateProfile(_prev: AccountState | null, formData: FormDa
   if (!user) return { error: "Please log in again." };
 
   const supabase = await createClient();
+
+  const { data: levelRows } = await supabase.from("levels").select("id, number");
+  const level = resolveLevelForProgramme(parsed.data.programme, parsed.data.levelId, (levelRows ?? []) as LevelRef[]);
+  if (!level.ok) return { fieldErrors: { levelId: level.message } };
+
   const { error } = await supabase
     .from("profiles")
     .update({
       full_name: parsed.data.fullName,
       programme: parsed.data.programme || null,
-      level_id: parsed.data.levelId || null,
+      level_id: level.levelId,
     })
     .eq("id", user.id);
   if (error) return { error: "Could not save your profile. Please try again." };

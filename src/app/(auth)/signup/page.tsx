@@ -19,7 +19,7 @@ export default async function SignupPage() {
         Free for WIUT students. Get study materials for your level, quizzes and event invitations.
       </p>
 
-      <SignupForm levels={levels.map((l) => ({ id: l.id, label: `${l.name} · ${l.study_year}` }))} domains={domains} />
+      <SignupForm levels={levels.map((l) => ({ id: l.id, number: l.number, label: `${l.name} · ${l.study_year}` }))} domains={domains} />
 
       <p className="mt-6 text-center text-sm text-slate-600">
         Already have an account?{" "}
