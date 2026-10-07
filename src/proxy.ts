@@ -7,49 +7,54 @@ const PROTECTED_PREFIXES = ["/my", "/account", "/admin"];
 const AUTH_PAGES = ["/login", "/signup"];
 
 export async function proxy(request: NextRequest) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) {
-    // Supabase not configured yet — let pages render their setup hint.
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  if (!url || !key || !URL.canParse(url)) {
+    // Supabase not configured (or misconfigured) — never take the whole site down for it.
     return NextResponse.next({ request });
   }
 
   let response = NextResponse.next({ request });
 
-  const supabase = createServerClient(url, key, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
+  try {
+    const supabase = createServerClient(url, key, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          response = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+        },
       },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        response = NextResponse.next({ request });
-        cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
-      },
-    },
-  });
+    });
 
-  // Refreshes the session cookie when needed. Do not add logic between
-  // createServerClient and getUser(), or sessions may be dropped at random.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    // Refreshes the session cookie when needed. Do not add logic between
+    // createServerClient and getUser(), or sessions may be dropped at random.
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
+    const { pathname } = request.nextUrl;
 
-  if (!user && PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/login";
-    loginUrl.search = "";
-    loginUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
+    if (!user && PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/login";
+      loginUrl.search = "";
+      loginUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
 
-  if (user && AUTH_PAGES.includes(pathname)) {
-    const homeUrl = request.nextUrl.clone();
-    homeUrl.pathname = "/my";
-    homeUrl.search = "";
-    return NextResponse.redirect(homeUrl);
+    if (user && AUTH_PAGES.includes(pathname)) {
+      const homeUrl = request.nextUrl.clone();
+      homeUrl.pathname = "/my";
+      homeUrl.search = "";
+      return NextResponse.redirect(homeUrl);
+    }
+  } catch (error) {
+    // A broken auth check must not turn every page into a 500; pages re-check access themselves.
+    console.error("proxy: session check failed", error);
   }
 
   return response;
@@ -57,7 +62,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Everything except static assets and images.
-    "/((?!_next/static|_next/image|favicon.ico|icon.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|pdf)$).*)",
+    // Everything except Next internals and files with an extension (images, csv, ics, fonts …).
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.[A-Za-z0-9]{1,8}$).*)",
   ],
 };
