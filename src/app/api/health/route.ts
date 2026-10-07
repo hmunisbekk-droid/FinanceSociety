@@ -22,8 +22,11 @@ export async function GET() {
         : trimmed.startsWith("eyJ")
           ? "legacy JWT key"
           : "unrecognised format";
-    const suspicious = value !== trimmed || /["'=\s]/.test(trimmed) ? " (contains quotes, spaces or '=' — paste the bare value)" : "";
-    return `${shape}, ${trimmed.length} characters${suspicious}`;
+    const notes = [
+      value !== trimmed ? "had whitespace around it (trimmed automatically)" : "",
+      /["'=\s]/.test(trimmed) ? "contains quotes, spaces or '=' — paste the bare value" : "",
+    ].filter(Boolean);
+    return `${shape}, ${trimmed.length} characters${notes.length ? ` (${notes.join("; ")})` : ""}`;
   };
 
   let urlStatus: string;
