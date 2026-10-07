@@ -1,0 +1,3 @@
+# Minimal Supabase CLI config. Migrations in supabase/migrations/ are applied to the
+# hosted project with `npm run db:push` (uses DATABASE_URL from .env.local).
+project_id = "finance-society"

@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+/*
+  Design tokens. The brand palette is a placeholder (navy + gold) until the club
+  sends its real colours — swap the values here and the whole site follows.
+  Green and red are reserved for correct/wrong answers and gains/losses (ТЗ §8).
+*/
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --color-brand-50: #eef3fa;
+  --color-brand-100: #dbe6f4;
+  --color-brand-200: #b7cce8;
+  --color-brand-300: #86a9d6;
+  --color-brand-400: #4f7fbd;
+  --color-brand-500: #2b5fa3;
+  --color-brand-600: #1f4b85;
+  --color-brand-700: #183b69;
+  --color-brand-800: #122c4f;
+  --color-brand-900: #0b1f3a;
+  --color-brand-950: #061325;
+
+  --color-accent-100: #faf1d2;
+  --color-accent-200: #f5e3a3;
+  --color-accent-300: #f1d27a;
+  --color-accent-400: #e4bd48;
+  --color-accent-500: #c9a227;
+  --color-accent-600: #a8841b;
+  --color-accent-700: #826513;
+
+  --radius-card: 0.875rem;
+  --shadow-card: 0 1px 2px rgb(11 31 58 / 0.06), 0 4px 16px -4px rgb(11 31 58 / 0.08);
+}
+
+@layer base {
+  html {
+    /* Body text is never smaller than 16px (ТЗ §7, accessibility). */
+    font-size: 16px;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-800 antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+}

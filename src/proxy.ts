@@ -1,0 +1,63 @@
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+
+/** Pages that need a logged-in user. Role checks (admin, editor) happen in the page layouts. */
+const PROTECTED_PREFIXES = ["/my", "/account", "/admin"];
+/** Pages that make no sense once logged in. */
+const AUTH_PAGES = ["/login", "/signup"];
+
+export async function proxy(request: NextRequest) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) {
+    // Supabase not configured yet — let pages render their setup hint.
+    return NextResponse.next({ request });
+  }
+
+  let response = NextResponse.next({ request });
+
+  const supabase = createServerClient(url, key, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        response = NextResponse.next({ request });
+        cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+      },
+    },
+  });
+
+  // Refreshes the session cookie when needed. Do not add logic between
+  // createServerClient and getUser(), or sessions may be dropped at random.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { pathname } = request.nextUrl;
+
+  if (!user && PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    loginUrl.search = "";
+    loginUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (user && AUTH_PAGES.includes(pathname)) {
+    const homeUrl = request.nextUrl.clone();
+    homeUrl.pathname = "/my";
+    homeUrl.search = "";
+    return NextResponse.redirect(homeUrl);
+  }
+
+  return response;
+}
+
+export const config = {
+  matcher: [
+    // Everything except static assets and images.
+    "/((?!_next/static|_next/image|favicon.ico|icon.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|pdf)$).*)",
+  ],
+};
