@@ -32,16 +32,16 @@ export default async function HomePage() {
     <>
       {/* Hero */}
       <section className="bg-brand-900 text-white">
-        <Container className="grid gap-10 py-16 sm:py-20 lg:grid-cols-[1.6fr_1fr] lg:items-center lg:py-24">
+        <Container className="py-16 sm:py-20 lg:py-24">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-accent-400">{site.name}</p>
-            {/* Sized so each half stays on one line from laptop widths up (two rows in total). */}
-            <h1 className="mt-4 text-balance text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-[2.125rem]">
+            {/* Full-width headline, sized so each half stays on one line from laptop widths up (two rows in total). */}
+            <h1 className="mt-4 text-balance text-3xl font-bold leading-[1.12] tracking-tight sm:text-4xl lg:text-[2.75rem] xl:text-[3.25rem]">
               <span className="lg:whitespace-nowrap">From foundation to final year:</span>
               <br />
               <span className="lg:whitespace-nowrap">your finance modules, in one place.</span>
             </h1>
-            <p className="mt-5 max-w-xl text-lg text-brand-100">
+            <p className="mt-6 max-w-2xl text-lg text-brand-100 sm:text-xl">
               Structured study materials for every WIUT finance module, quizzes that explain the right answer, and
               events where you meet people who work in finance.
             </p>
@@ -61,7 +61,7 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <dl className="grid grid-cols-3 gap-4 rounded-card border border-brand-700 bg-brand-800/60 p-5 text-center sm:p-6">
+          <dl className="mt-10 grid max-w-xl grid-cols-3 gap-4 rounded-card border border-brand-700 bg-brand-800/60 p-5 text-center sm:p-6">
             <div>
               <dt className="text-sm text-brand-200">Levels</dt>
               <dd className="mt-1 text-3xl font-bold text-white">{levels.length || 4}</dd>
