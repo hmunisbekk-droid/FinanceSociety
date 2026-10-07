@@ -1,6 +1,27 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 
 export const dynamic = "force-dynamic";
+
+/** How the server sees the caller's login — for debugging "logged out after login" reports. */
+async function sessionDiagnostics() {
+  const cookieStore = await cookies();
+  const authCookies = cookieStore.getAll().filter((c) => c.name.startsWith("sb-")).map((c) => `${c.name} (${c.value.length} chars)`);
+  if (!isSupabaseConfigured()) return { authCookies, note: "Supabase not configured" };
+
+  const supabase = await createClient();
+  const claims = await supabase.auth.getClaims().then(
+    ({ data, error }) => (error ? `error: ${error.message}` : data?.claims?.sub ? `ok (user ${data.claims.sub}, alg ${data.header?.alg ?? "?"})` : "no session"),
+    (e: unknown) => `threw: ${e instanceof Error ? e.message : String(e)}`,
+  );
+  const user = await supabase.auth.getUser().then(
+    ({ data, error }) => (error ? `error: ${error.message}` : data.user ? `ok (user ${data.user.id})` : "no session"),
+    (e: unknown) => `threw: ${e instanceof Error ? e.message : String(e)}`,
+  );
+  return { authCookies, getClaims: claims, getUser: user };
+}
 
 /**
  * Deployment check: reports whether the environment is wired up, without
@@ -60,6 +81,7 @@ export async function GET() {
       serviceRoleKey: describeKey(service),
       siteUrl: siteUrl || "missing (auth links will point to localhost)",
       database,
+      session: await sessionDiagnostics(),
       checkedAt: new Date().toISOString(),
     },
     { headers: { "Cache-Control": "no-store" } },
