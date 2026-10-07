@@ -79,13 +79,15 @@ export default async function UsersAdminPage({ searchParams }: { searchParams: P
                       <form action={updateUserRole} className="flex items-center gap-1.5">
                         <input type="hidden" name="userId" value={user.id} />
                         {q && <input type="hidden" name="q" value={q} />}
-                        <Select name="role" defaultValue={user.role} aria-label={`Role for ${user.full_name || user.email}`} className="w-28 py-1.5 text-sm" disabled={isMe}>
-                          {ROLES.map((r) => (
-                            <option key={r.value} value={r.value}>
-                              {r.label}
-                            </option>
-                          ))}
-                        </Select>
+                        <div className="w-28 shrink-0">
+                          <Select name="role" defaultValue={user.role} aria-label={`Role for ${user.full_name || user.email}`} className="py-1.5 text-sm" disabled={isMe}>
+                            {ROLES.map((r) => (
+                              <option key={r.value} value={r.value}>
+                                {r.label}
+                              </option>
+                            ))}
+                          </Select>
+                        </div>
                         {!isMe && (
                           <Button type="submit" variant="ghost" size="sm">
                             Save
