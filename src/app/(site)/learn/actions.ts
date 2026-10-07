@@ -52,8 +52,14 @@ export async function setTopicCompleted(formData: FormData) {
 
 export type SubmitQuizResult = (GradedQuiz & { attemptId: string; bestPercent: number }) | { error: string };
 
+const topicPathPattern = /^\/learn\/[3-6]\/[a-z0-9-]+\/[a-z0-9-]+$/;
+
 /** Grades an attempt on the server and stores it (FR-22). */
-export async function submitQuiz(quizId: string, answers: Record<string, StudentAnswer>): Promise<SubmitQuizResult> {
+export async function submitQuiz(
+  quizId: string,
+  answers: Record<string, StudentAnswer>,
+  topicPath: string,
+): Promise<SubmitQuizResult> {
   if (!uuid.safeParse(quizId).success) return { error: "Quiz not found." };
 
   const user = await getCurrentUser();
@@ -107,7 +113,11 @@ export async function submitQuiz(quizId: string, answers: Record<string, Student
     .limit(1)
     .maybeSingle();
 
-  revalidatePath("/learn", "layout");
+  // Refresh the pages that show scores, but not the quiz page itself (it would reshuffle under the results).
+  if (topicPathPattern.test(topicPath)) {
+    revalidatePath(topicPath);
+    revalidatePath(topicPath.slice(0, topicPath.lastIndexOf("/")));
+  }
   revalidatePath("/my");
 
   return { ...graded, attemptId: attempt.id as string, bestPercent: Number(best?.percent ?? graded.percent) };

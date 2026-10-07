@@ -50,7 +50,14 @@ export default async function QuizPage({ params }: { params: Params }) {
             This quiz has no questions yet.
           </p>
         ) : (
-          <QuizRunner quizId={quiz.id} questions={questions} topicHref={topicPath} previousBest={bestPercent} />
+          <QuizRunner
+            quizId={quiz.id}
+            questions={questions}
+            shuffleQuestions={quiz.shuffle_questions}
+            shuffleOptions={quiz.shuffle_options}
+            topicHref={topicPath}
+            previousBest={bestPercent}
+          />
         )}
       </div>
     </Container>

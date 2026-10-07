@@ -78,9 +78,12 @@ export async function getSubjectPage(levelNumber: number, subjectSlug: string, u
     .eq("subject_id", subject.id)
     .order("sort_order");
 
+  type QuizEmbed = Pick<Quiz, "id" | "status"> | Array<Pick<Quiz, "id" | "status">> | null;
   const topics: TopicRow[] = (topicRows ?? []).map((row) => {
-    const { quizzes, ...topic } = row as Topic & { quizzes: Array<Pick<Quiz, "id" | "status">> };
-    return { ...topic, quiz: quizzes?.[0] ?? null, completed: false, opened: false, bestPercent: null };
+    const { quizzes, ...topic } = row as Topic & { quizzes: QuizEmbed };
+    // One quiz per topic, so PostgREST embeds an object; tolerate an array too.
+    const quiz = Array.isArray(quizzes) ? (quizzes[0] ?? null) : quizzes;
+    return { ...topic, quiz, completed: false, opened: false, bestPercent: null };
   });
 
   if (userId && topics.length > 0) {
@@ -207,6 +210,19 @@ export async function getTopicPage(levelNumber: number, subjectSlug: string, top
     next,
     position: { index: index + 1, total: ordered.length },
   };
+}
+
+/** Title for the browser tab; null when the viewer cannot see the topic. */
+export async function getTopicTitle(levelNumber: number, subjectSlug: string, topicSlug: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("topics")
+    .select("title, subjects!inner(slug, levels!inner(number))")
+    .eq("slug", topicSlug)
+    .eq("subjects.slug", subjectSlug)
+    .eq("subjects.levels.number", levelNumber)
+    .maybeSingle();
+  return (data as { title: string } | null)?.title ?? null;
 }
 
 export function topicHref(levelNumber: number, subjectSlug: string, topicSlug?: string) {

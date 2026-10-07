@@ -8,15 +8,16 @@ import { Prose } from "@/components/prose";
 import { Badge, ButtonLink, Container } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { formatDate, formatPercent } from "@/lib/format";
-import { getTopicPage } from "@/lib/learning";
+import { getTopicPage, getTopicTitle } from "@/lib/learning";
 import { CompletedToggle } from "./completed-toggle";
 import { ViewPing } from "./view-ping";
 
 type Params = Promise<{ level: string; subject: string; topic: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
-  const { topic } = await params;
-  return { title: topic.replace(/-/g, " ") };
+  const { level, subject, topic } = await params;
+  const title = await getTopicTitle(Number(level), subject, topic);
+  return { title: title ?? "Topic" };
 }
 
 function Section({

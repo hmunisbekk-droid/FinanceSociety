@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { ArrowLeft, ArrowRight, Check, LoaderCircle, RotateCcw, Trophy, X } from "lucide-react";
 import { Alert, Button, buttonClasses } from "@/components/ui";
@@ -14,18 +13,32 @@ type Result = Exclude<SubmitQuizResult, { error: string }>;
 
 const EMPTY: StudentAnswer = { optionIds: [], value: "" };
 
+function shuffle<T>(items: T[]): T[] {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j]!, out[i]!];
+  }
+  return out;
+}
+
 export function QuizRunner({
   quizId,
-  questions,
+  questions: initialQuestions,
+  shuffleQuestions,
+  shuffleOptions,
   topicHref,
   previousBest,
 }: {
   quizId: string;
   questions: PublicQuestion[];
+  shuffleQuestions: boolean;
+  shuffleOptions: boolean;
   topicHref: string;
   previousBest: number | null;
 }) {
-  const router = useRouter();
+  // Snapshot the order for this attempt so a background refresh cannot reshuffle mid-quiz.
+  const [questions, setQuestions] = useState(initialQuestions);
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, StudentAnswer>>({});
   const [result, setResult] = useState<Result | null>(null);
@@ -44,7 +57,7 @@ export function QuizRunner({
   const submit = () => {
     setError(null);
     startTransition(async () => {
-      const res = await submitQuiz(quizId, answers);
+      const res = await submitQuiz(quizId, answers, topicHref);
       if ("error" in res) {
         setError(res.error);
       } else {
@@ -54,12 +67,18 @@ export function QuizRunner({
     });
   };
 
+  // A new attempt gets a new order (FR-23).
   const tryAgain = () => {
+    const next = (shuffleQuestions ? shuffle(initialQuestions) : initialQuestions).map((q) => ({
+      ...q,
+      options: shuffleOptions && q.type !== "true_false" ? shuffle(q.options) : q.options,
+    }));
+    setQuestions(next);
     setResult(null);
     setAnswers({});
     setIndex(0);
     setError(null);
-    router.refresh(); // re-shuffles questions on the server
+    window.scrollTo({ top: 0 });
   };
 
   if (result) {
@@ -216,7 +235,8 @@ function Results({
   topicHref: string;
   onRetry: () => void;
 }) {
-  const byId = new Map(questions.map((q) => [q.id, q]));
+  // Review in the order the student saw the questions.
+  const resultById = new Map(result.questions.map((r) => [r.id, r]));
   const correctCount = result.questions.filter((q) => q.correct).length;
   const pct = Math.round(result.percent);
   const tone = pct >= 70 ? "text-green-700" : pct >= 40 ? "text-accent-600" : "text-red-700";
@@ -243,10 +263,10 @@ function Results({
 
       <h2 className="mt-10 text-xl font-bold text-brand-900">Review your answers</h2>
       <ol className="mt-4 space-y-4">
-        {result.questions.map((r, i) => {
-          const q = byId.get(r.id);
-          if (!q) return null;
-          return <ReviewItem key={r.id} index={i} question={q} result={r} />;
+        {questions.map((q, i) => {
+          const r = resultById.get(q.id);
+          if (!r) return null;
+          return <ReviewItem key={q.id} index={i} question={q} result={r} />;
         })}
       </ol>
     </div>
