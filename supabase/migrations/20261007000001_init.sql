@@ -212,9 +212,13 @@ create index event_registrations_event_idx on public.event_registrations (event_
 -- ---------------------------------------------------------------------------
 -- Helper functions used by policies and triggers
 -- ---------------------------------------------------------------------------
-create or replace function public.is_service_role()
+-- True for the service-role key and for direct database connections (migrations,
+-- the dashboard SQL editor), which carry no user token. Both already bypass RLS;
+-- this lets the triggers below treat them as admins too.
+create or replace function public.is_privileged()
 returns boolean language sql stable as $$
-  select coalesce(nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role', '') = 'service_role'
+  select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '') = ''
+      or coalesce(nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role', '') = 'service_role'
 $$;
 
 create or replace function public.current_user_role()
@@ -229,7 +233,7 @@ $$;
 
 create or replace function public.is_admin()
 returns boolean language sql stable security definer set search_path = public as $$
-  select public.is_service_role()
+  select public.is_privileged()
       or coalesce((select role = 'admin' and not is_blocked from public.profiles where id = (select auth.uid())), false)
 $$;
 
