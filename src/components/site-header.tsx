@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { LogOut, Menu, X } from "lucide-react";
+import { LogOut, Menu, Search, X } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { buttonClasses } from "@/components/ui";
 import { cn } from "@/lib/cn";
@@ -62,6 +62,9 @@ export function SiteHeader({ user }: { user: HeaderUser | null }) {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
+          <Link href="/search" className={buttonClasses("ghost", "sm", "px-2")} aria-label="Search" title="Search">
+            <Search className="h-4 w-4" aria-hidden="true" />
+          </Link>
           {user ? (
             <>
               <Link href="/my" className={buttonClasses("secondary", "sm")}>
@@ -109,6 +112,7 @@ export function SiteHeader({ user }: { user: HeaderUser | null }) {
         <div id="mobile-menu" className="border-t border-slate-200 bg-white md:hidden">
           <nav className="space-y-1 px-4 py-3" aria-label="Main">
             {items.map((item) => navLink(item.href, item.label, true))}
+            {navLink("/search", "Search", true)}
           </nav>
           <div className="border-t border-slate-200 px-4 py-3">
             {user ? (

@@ -100,7 +100,7 @@ export default async function TopicPage({ params }: { params: Params }) {
 
           {topic.key_formulas && (
             <Section icon={Sigma} title="Key formulas">
-              <Prose text={topic.key_formulas} className="font-mono text-[0.95rem]" />
+              <Prose text={topic.key_formulas} className="text-[1.05rem]" />
             </Section>
           )}
 

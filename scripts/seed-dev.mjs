@@ -100,8 +100,11 @@ const TOPICS = [
     sort_order: 1,
     summary:
       "Net present value tells you how much richer a project makes the company today. You forecast the cash the project will bring in each year, discount every amount back to today's money using the company's required rate of return, and subtract what the project costs now.\n\nA positive NPV means the project earns more than the required return, so it creates value and should be accepted. A negative NPV destroys value. NPV is the preferred appraisal method because it measures value in money, uses all cash flows, and respects the time value of money.",
-    key_formulas:
-      "NPV = Σ [ CF_t / (1 + r)^t ] − C_0\n\nCF_t = cash flow in year t · r = discount rate (required return) · t = year · C_0 = initial investment\n\nDiscount factor for year t: DF_t = 1 / (1 + r)^t",
+    key_formulas: String.raw`$$NPV = \sum_{t=1}^{n} \frac{CF_t}{(1+r)^t} - C_0$$
+
+$CF_t$ = cash flow in year $t$ · $r$ = discount rate (required return) · $C_0$ = initial investment
+
+Discount factor for year $t$: $DF_t = \dfrac{1}{(1+r)^t}$`,
     worked_example:
       "A machine costs 10,000 today and brings in 4,000 a year for three years. The required return is 10%.\n\nYear 1: 4,000 / 1.10 = 3,636.36\nYear 2: 4,000 / 1.10² = 3,305.79\nYear 3: 4,000 / 1.10³ = 3,005.26\n\nTotal present value of inflows = 9,947.41\nNPV = 9,947.41 − 10,000 = −52.59\n\nThe NPV is slightly negative, so the machine should be rejected at a 10% required return.",
     materials: [
@@ -172,8 +175,12 @@ const TOPICS = [
     sort_order: 2,
     summary:
       "The internal rate of return is the discount rate at which a project's NPV is exactly zero. It is the project's own percentage return. Managers like it because a percentage is easy to compare with the cost of borrowing or the required return.\n\nThe decision rule: accept the project if the IRR is higher than the required return. IRR can mislead when cash flows change sign more than once (several IRRs) or when comparing projects of different sizes, so NPV should decide when the two methods disagree.",
-    key_formulas:
-      "Σ [ CF_t / (1 + IRR)^t ] − C_0 = 0\n\nLinear interpolation estimate:\nIRR ≈ L + [ NPV_L / (NPV_L − NPV_H) ] × (H − L)\n\nL = lower rate · H = higher rate · NPV_L, NPV_H = NPV at those rates",
+    key_formulas: String.raw`$$\sum_{t=1}^{n} \frac{CF_t}{(1+IRR)^t} - C_0 = 0$$
+
+Linear interpolation estimate:
+$$IRR \approx L + \frac{NPV_L}{NPV_L - NPV_H} \times (H - L)$$
+
+$L$ = lower rate · $H$ = higher rate · $NPV_L$, $NPV_H$ = NPV at those rates`,
     worked_example:
       "A project costs 1,000 and pays 600 at the end of year 1 and 600 at the end of year 2.\n\nAt 10%: NPV = 600/1.10 + 600/1.21 − 1,000 = 545.45 + 495.87 − 1,000 = +41.32\nAt 15%: NPV = 600/1.15 + 600/1.3225 − 1,000 = 521.74 + 453.69 − 1,000 = −24.57\n\nIRR ≈ 10% + [41.32 / (41.32 + 24.57)] × 5% = 10% + 0.627 × 5% ≈ 13.1%\n\nIf the required return is 10%, the project is accepted (13.1% > 10%).",
     materials: [
@@ -234,8 +241,11 @@ const TOPICS = [
     sort_order: 3,
     summary:
       "WACC is the average return a company must earn on its investments to satisfy everyone who finances it: shareholders want the cost of equity, lenders want the cost of debt. Each cost is weighted by the market value of that source of finance.\n\nBecause interest is tax-deductible, the cost of debt is taken after tax. WACC is the discount rate used for NPV when a project has the same business risk and financing mix as the company as a whole.",
-    key_formulas:
-      "WACC = [ E / (E + D) ] × k_e + [ D / (E + D) ] × k_d × (1 − T)\n\nE = market value of equity · D = market value of debt · k_e = cost of equity · k_d = pre-tax cost of debt · T = corporate tax rate\n\nCost of equity (CAPM): k_e = R_f + β × (R_m − R_f)",
+    key_formulas: String.raw`$$WACC = \frac{E}{E+D}\,k_e + \frac{D}{E+D}\,k_d\,(1 - T)$$
+
+$E$ = market value of equity · $D$ = market value of debt · $k_e$ = cost of equity · $k_d$ = pre-tax cost of debt · $T$ = corporate tax rate
+
+Cost of equity (CAPM): $k_e = R_f + \beta\,(R_m - R_f)$`,
     worked_example:
       "A company has equity worth 60m and debt worth 40m. Cost of equity is 12%, pre-tax cost of debt is 6%, tax rate is 20%.\n\nAfter-tax cost of debt = 6% × (1 − 0.20) = 4.8%\nWeight of equity = 60 / 100 = 0.6 · Weight of debt = 40 / 100 = 0.4\n\nWACC = 0.6 × 12% + 0.4 × 4.8% = 7.2% + 1.92% = 9.12%\n\nProjects with the company's usual risk should be discounted at about 9.1%.",
     materials: [
@@ -321,13 +331,20 @@ for (const t of TOPICS) {
   );
   if (materialsError) fail(`materials ${t.slug}`, materialsError);
 
-  await db.from("quizzes").delete().eq("topic_id", topic.id);
-  const { data: quiz, error: quizError } = await db
-    .from("quizzes")
-    .insert({ topic_id: topic.id, title: t.quiz.title, status: "published" })
-    .select("id")
-    .single();
-  if (quizError) fail(`quiz ${t.slug}`, quizError);
+  // Keep the quiz row (students' attempts point at it); rebuild its questions.
+  let quiz = (await db.from("quizzes").select("id").eq("topic_id", topic.id).maybeSingle()).data;
+  if (quiz) {
+    await db.from("quizzes").update({ title: t.quiz.title, status: "published" }).eq("id", quiz.id);
+    await db.from("questions").delete().eq("quiz_id", quiz.id);
+  } else {
+    const { data, error: quizError } = await db
+      .from("quizzes")
+      .insert({ topic_id: topic.id, title: t.quiz.title, status: "published" })
+      .select("id")
+      .single();
+    if (quizError) fail(`quiz ${t.slug}`, quizError);
+    quiz = data;
+  }
 
   for (const [i, q] of t.quiz.questions.entries()) {
     const { data: question, error: questionError } = await db

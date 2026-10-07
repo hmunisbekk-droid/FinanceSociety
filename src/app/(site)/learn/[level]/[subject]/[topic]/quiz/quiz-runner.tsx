@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { ArrowLeft, ArrowRight, Check, LoaderCircle, RotateCcw, Trophy, X } from "lucide-react";
+import { MathText } from "@/components/prose";
 import { Alert, Button, buttonClasses } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { formatPercent } from "@/lib/format";
@@ -111,7 +112,9 @@ export function QuizRunner({
                 : "Choose one answer"}
           {question.points !== 1 && ` · ${question.points} points`}
         </p>
-        <h2 className="mt-2 text-xl font-semibold leading-snug text-brand-900">{question.prompt}</h2>
+        <h2 className="mt-2 text-xl font-semibold leading-snug text-brand-900">
+          <MathText html={question.promptHtml} />
+        </h2>
 
         <div className="mt-5">
           {question.type === "numeric" ? (
@@ -157,7 +160,7 @@ export function QuizRunner({
                         }}
                         className="mt-1 h-4 w-4 accent-brand-700"
                       />
-                      <span className="text-base text-slate-800">{option.text}</span>
+                      <MathText html={option.html} className="text-base text-slate-800" />
                     </label>
                   );
                 })}
@@ -296,7 +299,9 @@ function ReviewItem({ index, question, result }: { index: number; question: Publ
             Question {index + 1} · {result.correct ? "Correct" : result.answered ? "Incorrect" : "Not answered"}
             {result.points !== 1 && ` · ${result.pointsEarned}/${result.points} points`}
           </p>
-          <p className="mt-1 font-semibold text-brand-900">{question.prompt}</p>
+          <p className="mt-1 font-semibold text-brand-900">
+            <MathText html={question.promptHtml} />
+          </p>
 
           {question.type === "numeric" ? (
             <dl className="mt-3 grid gap-1 text-sm sm:grid-cols-2">
@@ -332,7 +337,7 @@ function ReviewItem({ index, question, result }: { index: number; question: Publ
                     ) : (
                       <span className="inline-block h-4 w-4 shrink-0" aria-hidden="true" />
                     )}
-                    <span>{o.text}</span>
+                    <MathText html={o.html} />
                     {chosen && <span className="ml-auto text-xs text-slate-500">your answer</span>}
                   </li>
                 );
@@ -343,7 +348,9 @@ function ReviewItem({ index, question, result }: { index: number; question: Publ
           {result.explanation && (
             <div className="mt-4 rounded-lg bg-slate-50 p-4 text-sm leading-6 text-slate-700">
               <p className="font-semibold text-slate-800">Worked solution</p>
-              <p className="mt-1 whitespace-pre-line">{result.explanation}</p>
+              <p className="mt-1 [&_.katex-display]:my-2 [&_.katex-display]:overflow-x-auto">
+                <MathText html={result.explanationHtml} />
+              </p>
             </div>
           )}
         </div>

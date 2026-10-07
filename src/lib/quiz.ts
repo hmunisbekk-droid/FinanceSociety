@@ -1,5 +1,6 @@
 import "server-only";
 
+import { renderMath } from "@/lib/math";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Question, QuestionOption, QuestionType } from "@/lib/types";
 
@@ -8,8 +9,10 @@ export interface PublicQuestion {
   id: string;
   type: QuestionType;
   prompt: string;
+  /** Prompt with formulas rendered (FR-13). */
+  promptHtml: string;
   points: number;
-  options: Array<{ id: string; text: string }>;
+  options: Array<{ id: string; text: string; html: string }>;
 }
 
 export interface StudentAnswer {
@@ -22,6 +25,7 @@ export interface QuestionResult {
   correct: boolean;
   answered: boolean;
   explanation: string;
+  explanationHtml: string;
   correctOptionIds: string[];
   correctValue: number | null;
   tolerance: number | null;
@@ -72,11 +76,12 @@ export function toPublicQuestions(
 ): PublicQuestion[] {
   const list = shuffleQuestions ? shuffle(questions) : questions;
   return list.map((q) => {
-    const options = q.question_options.map((o) => ({ id: o.id, text: o.text }));
+    const options = q.question_options.map((o) => ({ id: o.id, text: o.text, html: renderMath(o.text) }));
     return {
       id: q.id,
       type: q.type,
       prompt: q.prompt,
+      promptHtml: renderMath(q.prompt),
       points: Number(q.points),
       // True/false keeps its natural order so "True" is always first.
       options: shuffleOptions && q.type !== "true_false" ? shuffle(options) : options,
@@ -148,6 +153,7 @@ export function grade(questions: FullQuestion[], answers: Record<string, Student
       correct,
       answered,
       explanation: q.explanation,
+      explanationHtml: renderMath(q.explanation),
       correctOptionIds,
       correctValue: q.numeric_answer === null ? null : Number(q.numeric_answer),
       tolerance: q.tolerance === null ? null : Number(q.tolerance),
