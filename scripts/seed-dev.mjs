@@ -66,17 +66,18 @@ await ensureUser("dev.admin@example.com", "Admin Account", "BSc (Hons) in Financ
 // ---------------------------------------------------------------------------
 const SUBJECT = {
   level_id: level5.id,
-  name: "Corporate Finance",
-  slug: "corporate-finance",
+  name: "Financial Management",
+  slug: "financial-management",
   description: "How companies choose investments and finance them: investment appraisal, cost of capital, capital structure and dividend policy.",
   sort_order: 1,
   status: "published",
 };
 
-// Reuse the row from a previous run, otherwise rename the blank "Module 1", otherwise insert.
-let subject = (await db.from("subjects").select("id").eq("level_id", level5.id).eq("slug", SUBJECT.slug).maybeSingle()).data;
-if (!subject) {
-  subject = (await db.from("subjects").select("id").eq("level_id", level5.id).eq("slug", "module-1").maybeSingle()).data;
+// Reuse the row from a previous run (or its old "Corporate Finance" name), otherwise rename the blank "Module 1", otherwise insert.
+let subject = null;
+for (const slug of [SUBJECT.slug, "corporate-finance", "module-1"]) {
+  subject = (await db.from("subjects").select("id").eq("level_id", level5.id).eq("slug", slug).maybeSingle()).data;
+  if (subject) break;
 }
 if (subject) {
   const { error } = await db.from("subjects").update(SUBJECT).eq("id", subject.id);
@@ -86,7 +87,7 @@ if (subject) {
   if (error) fail("subject", error);
   subject = data;
 }
-console.log("✓ subject  Corporate Finance");
+console.log("✓ subject  Financial Management");
 
 await db.from("editor_subjects").upsert({ user_id: editorId, subject_id: subject.id }, { onConflict: "user_id,subject_id" });
 

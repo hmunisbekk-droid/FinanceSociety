@@ -102,7 +102,7 @@ export default async function TopicAdminPage({ params, searchParams }: { params:
           <Field label="Summary" htmlFor="summary" hint="150–300 words in plain English. Blank lines start new paragraphs.">
             <Textarea id="summary" name="summary" defaultValue={topic.summary} className="min-h-40" />
           </Field>
-          <Field label="Key formulas" htmlFor="key_formulas" hint="One formula per line, followed by what each symbol means.">
+          <Field label="Key formulas and rules" htmlFor="key_formulas" hint="Formulas (LaTeX between $…$ or $$…$$) and the key rules or definitions, one per line.">
             <Textarea id="key_formulas" name="key_formulas" defaultValue={topic.key_formulas} className="min-h-28 font-mono text-sm" />
           </Field>
           <Field label="Worked example" htmlFor="worked_example" hint="One solved numeric problem, step by step.">
