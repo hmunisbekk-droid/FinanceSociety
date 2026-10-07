@@ -1,0 +1,5 @@
+type,question,points,option_a,option_b,option_c,option_d,option_e,correct,numeric_answer,tolerance,tolerance_type,explanation
+single,"A project has a positive NPV at the required return. What does this mean?",1,"The project earns more than the required return and should be accepted","The project breaks even","The project should be rejected",,,A,,,,"A positive NPV means the discounted inflows exceed the initial cost, so the project adds value."
+multiple,"Which of the following belong in a project's cash flows? Choose all that apply.",2,"Opportunity costs","Depreciation","Working-capital changes","Sunk costs",,A;C,,,,"Only real incremental cash effects count. Depreciation is not a cash flow and sunk costs are irrelevant."
+true_false,"Sunk costs should be included in an NPV calculation.",1,,,,,,FALSE,,,,"They have already been spent and cannot be recovered whatever you decide."
+numeric,"What is the discount factor for year 3 at 8%? Give 3 decimal places.",1,,,,,,,0.794,0.002,absolute,"DF = 1 / 1.08^3 = 0.794"

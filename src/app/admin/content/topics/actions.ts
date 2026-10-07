@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { describeDbError, withFlash } from "@/lib/flash";
+import { parseQuestionsCsv } from "@/lib/question-csv";
+import { questionInputSchema, type QuestionInput } from "@/lib/question-schema";
 import { createClient } from "@/lib/supabase/server";
 
 const uuid = z.string().uuid();
@@ -196,44 +198,15 @@ export async function updateQuiz(formData: FormData) {
   redirect(withFlash(back, { ok: "Quiz settings saved." }));
 }
 
-const optionSchema = z.object({ text: z.string().trim().min(1, "Every option needs text").max(500), correct: z.boolean() });
+const idsSchema = z.object({ id: uuid.optional(), quizId: uuid, topicId: uuid });
 
-const questionSchema = z
-  .object({
-    id: uuid.optional(),
-    quizId: uuid,
-    topicId: uuid,
-    type: z.enum(["single", "multiple", "true_false", "numeric"]),
-    prompt: z.string().trim().min(3, "Write the question").max(2000),
-    explanation: z.string().trim().max(5000),
-    points: z.number().positive("Points must be positive").max(100),
-    options: z.array(optionSchema).max(10),
-    numericAnswer: z.number().nullable(),
-    tolerance: z.number().min(0).nullable(),
-    toleranceType: z.enum(["absolute", "percent"]).nullable(),
-  })
-  .superRefine((q, ctx) => {
-    if (q.type === "numeric") {
-      if (q.numericAnswer === null) ctx.addIssue({ code: "custom", message: "Enter the correct number", path: ["numericAnswer"] });
-      return;
-    }
-    if (q.options.length < 2) ctx.addIssue({ code: "custom", message: "Add at least two options", path: ["options"] });
-    const correct = q.options.filter((o) => o.correct).length;
-    if (q.type === "multiple" && correct < 1) ctx.addIssue({ code: "custom", message: "Mark at least one option as correct", path: ["options"] });
-    if (q.type !== "multiple" && correct !== 1) ctx.addIssue({ code: "custom", message: "Mark exactly one option as correct", path: ["options"] });
-  });
+export type QuestionPayload = z.input<typeof idsSchema> & z.input<typeof questionInputSchema>;
 
-export type QuestionPayload = z.input<typeof questionSchema>;
+type Db = Awaited<ReturnType<typeof createClient>>;
 
-/** Creates or replaces a question with its options. Called from the question editor. */
-export async function saveQuestion(input: QuestionPayload): Promise<{ error?: string; ok?: true }> {
-  const parsed = questionSchema.safeParse(input);
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the question" };
-  const q = parsed.data;
-
-  const supabase = await createClient();
-  const row = {
-    quiz_id: q.quizId,
+function questionRow(quizId: string, q: QuestionInput) {
+  return {
+    quiz_id: quizId,
     type: q.type,
     prompt: q.prompt,
     explanation: q.explanation,
@@ -242,32 +215,88 @@ export async function saveQuestion(input: QuestionPayload): Promise<{ error?: st
     tolerance: q.type === "numeric" ? q.tolerance : null,
     tolerance_type: q.type === "numeric" && q.tolerance !== null ? (q.toleranceType ?? "absolute") : null,
   };
+}
 
-  let questionId = q.id;
-  if (questionId) {
-    const { error } = await supabase.from("questions").update(row).eq("id", questionId);
-    if (error) return { error: describeDbError(error, "Could not save the question") };
-    const { error: delError } = await supabase.from("question_options").delete().eq("question_id", questionId);
-    if (delError) return { error: describeDbError(delError, "Could not replace the options") };
-  } else {
-    const { data, error } = await supabase
-      .from("questions")
-      .insert({ ...row, sort_order: await nextSortOrder("questions", "quiz_id", q.quizId) })
-      .select("id")
-      .single();
-    if (error || !data) return { error: describeDbError(error, "Could not create the question") };
-    questionId = data.id as string;
-  }
-
+/** Inserts a question and its options; returns an error sentence or null. */
+async function insertQuestion(supabase: Db, quizId: string, q: QuestionInput, sortOrder: number): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("questions")
+    .insert({ ...questionRow(quizId, q), sort_order: sortOrder })
+    .select("id")
+    .single();
+  if (error || !data) return describeDbError(error, "Could not create the question");
   if (q.type !== "numeric") {
-    const { error } = await supabase
+    const { error: optError } = await supabase
       .from("question_options")
-      .insert(q.options.map((o, i) => ({ question_id: questionId, text: o.text, is_correct: o.correct, sort_order: i + 1 })));
-    if (error) return { error: describeDbError(error, "Could not save the options") };
+      .insert(q.options.map((o, i) => ({ question_id: data.id, text: o.text, is_correct: o.correct, sort_order: i + 1 })));
+    if (optError) return describeDbError(optError, "Could not save the options");
+  }
+  return null;
+}
+
+/** Creates or replaces a question with its options. Called from the question editor. */
+export async function saveQuestion(input: QuestionPayload): Promise<{ error?: string; ok?: true }> {
+  const ids = idsSchema.safeParse(input);
+  if (!ids.success) return { error: "Invalid question." };
+  const parsed = questionInputSchema.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the question" };
+  const q = parsed.data;
+  const { id, quizId, topicId } = ids.data;
+
+  const supabase = await createClient();
+  if (id) {
+    const { error } = await supabase.from("questions").update(questionRow(quizId, q)).eq("id", id);
+    if (error) return { error: describeDbError(error, "Could not save the question") };
+    const { error: delError } = await supabase.from("question_options").delete().eq("question_id", id);
+    if (delError) return { error: describeDbError(delError, "Could not replace the options") };
+    if (q.type !== "numeric") {
+      const { error: optError } = await supabase
+        .from("question_options")
+        .insert(q.options.map((o, i) => ({ question_id: id, text: o.text, is_correct: o.correct, sort_order: i + 1 })));
+      if (optError) return { error: describeDbError(optError, "Could not save the options") };
+    }
+  } else {
+    const error = await insertQuestion(supabase, quizId, q, await nextSortOrder("questions", "quiz_id", quizId));
+    if (error) return { error };
   }
 
-  revalidateTopic(q.topicId);
+  revalidateTopic(topicId);
   return { ok: true };
+}
+
+/** Bulk import from the CSV template (FR-25). All rows must be valid, or nothing is imported. */
+export async function importQuestionsCsv(formData: FormData) {
+  const quizId = text(formData, "quizId");
+  const topicId = text(formData, "topicId");
+  if (!uuid.safeParse(quizId).success || !uuid.safeParse(topicId).success) redirect("/admin/content");
+  const back = `/admin/content/topics/${topicId}#quiz`;
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) redirect(withFlash(back, { error: "Choose a CSV file first." }));
+  if (file.size > 1_000_000) redirect(withFlash(back, { error: "The file is too large (1 MB maximum)." }));
+
+  const { questions, errors } = parseQuestionsCsv(await file.text());
+  if (errors.length > 0) {
+    const shown = errors.slice(0, 5).join(" ");
+    const more = errors.length > 5 ? ` (+${errors.length - 5} more)` : "";
+    redirect(withFlash(back, { error: `Nothing imported — fix the file and try again. ${shown}${more}` }));
+  }
+  if (questions.length === 0) redirect(withFlash(back, { error: "No questions found in the file." }));
+
+  const supabase = await createClient();
+  let sortOrder = await nextSortOrder("questions", "quiz_id", quizId);
+  let done = 0;
+  for (const q of questions) {
+    const error = await insertQuestion(supabase, quizId, q, sortOrder++);
+    if (error) {
+      revalidateTopic(topicId);
+      redirect(withFlash(back, { error: `Imported ${done} of ${questions.length}, then failed: ${error}` }));
+    }
+    done += 1;
+  }
+
+  revalidateTopic(topicId);
+  redirect(withFlash(back, { ok: `Imported ${done} ${done === 1 ? "question" : "questions"}.` }));
 }
 
 export async function deleteQuestion(formData: FormData) {

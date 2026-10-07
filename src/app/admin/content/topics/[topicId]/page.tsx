@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowDown, ArrowUp, FileText, Image as ImageIcon, Link as LinkIcon, Pencil, Plus, Presentation, StickyNote, Trash, Video } from "lucide-react";
+import { ArrowDown, ArrowUp, FileText, Image as ImageIcon, Link as LinkIcon, Pencil, Plus, Presentation, StickyNote, Trash, Upload, Video } from "lucide-react";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Button, Card, Field, Input, Select, Textarea, buttonClasses } from "@/components/ui";
 import { STATUS_LABELS, getTopicAdmin } from "@/lib/admin";
@@ -12,7 +12,7 @@ import { ConfirmButton } from "../../../_components/confirm-button";
 import { Flash } from "../../../_components/flash";
 import { StatusBadge } from "../../../_components/status-badge";
 import { deleteTopic, updateTopic } from "../../actions";
-import { addLinkMaterial, createQuiz, deleteMaterial, deleteQuestion, moveMaterial, moveQuestion, updateMaterial, updateQuiz } from "../actions";
+import { addLinkMaterial, createQuiz, deleteMaterial, deleteQuestion, importQuestionsCsv, moveMaterial, moveQuestion, updateMaterial, updateQuiz } from "../actions";
 import { MaterialUpload } from "./material-upload";
 import { QuestionEditor } from "./question-editor";
 
@@ -325,6 +325,38 @@ export default async function TopicAdminPage({ params, searchParams }: { params:
                 <QuestionEditor key={editingQuestion?.id ?? "new"} quizId={quiz.id} topicId={topic.id} initial={editingQuestion} />
               </div>
             )}
+
+            {/* Bulk import (FR-25) */}
+            <details className="mt-5 rounded-lg border border-slate-200 p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-slate-900">Import questions from a CSV file</summary>
+              <p className="mt-2 text-sm text-slate-600">
+                Download the{" "}
+                <a href="/questions-template.csv" download className="font-medium text-brand-700 underline">
+                  template
+                </a>
+                , fill it in Excel or Google Sheets, save as CSV (UTF-8) and upload it here. Imported questions are added after the existing ones.
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                Columns: type (single, multiple, true_false, numeric) · question · points · option_a … option_e · correct (A, or A;C for several, or TRUE/FALSE) ·
+                numeric_answer · tolerance · tolerance_type (absolute/percent) · explanation.
+              </p>
+              <form action={importQuestionsCsv} className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <input type="hidden" name="quizId" value={quiz.id} />
+                <input type="hidden" name="topicId" value={topic.id} />
+                <input
+                  type="file"
+                  name="file"
+                  accept=".csv,text/csv"
+                  required
+                  aria-label="CSV file"
+                  className="block w-full text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-brand-800 hover:file:bg-brand-100 sm:w-auto"
+                />
+                <Button type="submit" variant="secondary">
+                  <Upload className="h-4 w-4" aria-hidden="true" />
+                  Import
+                </Button>
+              </form>
+            </details>
           </>
         )}
       </Card>
