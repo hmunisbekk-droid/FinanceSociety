@@ -36,9 +36,9 @@ export default async function HomePage() {
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-accent-400">{site.name}</p>
             <h1 className="mt-4 text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-              Learn finance by level.
+              From foundation to final year:
               <br />
-              Test yourself. Join the club.
+              your finance modules, in one place.
             </h1>
             <p className="mt-5 max-w-xl text-lg text-brand-100">
               Structured study materials for every WIUT finance module, quizzes that explain the right answer, and
@@ -84,7 +84,7 @@ export default async function HomePage() {
         <Container>
           <div className="flex items-end justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-brand-900 sm:text-3xl">Learning Hub by level</h2>
+              <h2 className="text-2xl font-bold tracking-tight text-brand-900 sm:text-3xl">Learning Hub by year</h2>
               <p className="mt-2 text-slate-600">Choose your year to see its subjects, topics and quizzes.</p>
             </div>
             <Link href="/learn" className="hidden shrink-0 text-sm font-medium text-brand-700 hover:underline sm:block">

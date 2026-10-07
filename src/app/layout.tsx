@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     template: "%s · WIUT Finance Society",
   },
   description:
-    "Level-based study materials, quizzes with worked solutions and events for WIUT finance students.",
+    "Study materials for every year of a WIUT finance degree, quizzes with worked solutions, and events for WIUT finance students.",
 };
 
 export const viewport: Viewport = {
