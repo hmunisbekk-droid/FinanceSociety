@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
+import { PROGRAMMES } from "@/lib/programmes";
 import { createClient } from "@/lib/supabase/server";
 
 export interface AccountState {
@@ -13,7 +14,7 @@ export interface AccountState {
 
 const profileSchema = z.object({
   fullName: z.string().trim().min(2, "Enter your full name").max(100),
-  programme: z.string().trim().max(120),
+  programme: z.enum(PROGRAMMES, { message: "Choose your programme from the list" }).or(z.literal("")),
   levelId: z.union([z.string().uuid(), z.literal("")]),
 });
 

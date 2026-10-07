@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { PROGRAMMES } from "@/lib/programmes";
 import { createClient } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/site";
 
@@ -44,7 +45,7 @@ const signUpSchema = z.object({
   fullName: z.string().trim().min(2, "Enter your full name").max(100),
   email: emailSchema,
   password: passwordSchema,
-  programme: z.string().trim().max(120).optional().or(z.literal("")),
+  programme: z.enum(PROGRAMMES, { message: "Choose your programme from the list" }).or(z.literal("")),
   levelId: z.string().uuid().optional().or(z.literal("")),
 });
 

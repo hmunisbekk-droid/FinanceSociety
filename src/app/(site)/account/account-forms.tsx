@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { Alert, Field, Input, Select } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
+import { PROGRAMMES, isProgramme } from "@/lib/programmes";
 import { changePassword, updateProfile } from "./actions";
 
 export function ProfileForm({
@@ -28,8 +29,15 @@ export function ProfileForm({
         <Input id="fullName" name="fullName" defaultValue={fullName} autoComplete="name" required aria-invalid={!!errors.fullName} />
       </Field>
 
-      <Field label="Programme" htmlFor="programme" error={errors.programme} hint="For example BSc Finance">
-        <Input id="programme" name="programme" defaultValue={programme} aria-invalid={!!errors.programme} />
+      <Field label="Programme" htmlFor="programme" error={errors.programme}>
+        <Select id="programme" name="programme" defaultValue={isProgramme(programme) ? programme : ""} aria-invalid={!!errors.programme}>
+          <option value="">Choose your programme</option>
+          {PROGRAMMES.map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
+        </Select>
       </Field>
 
       <Field label="Current level" htmlFor="levelId" error={errors.levelId} hint="Your level is highlighted across the site">

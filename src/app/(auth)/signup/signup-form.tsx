@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { signUp } from "../actions";
 import { Alert, Field, Input, Select } from "@/components/ui";
 import { SubmitButton } from "@/components/submit-button";
+import { PROGRAMMES } from "@/lib/programmes";
 
 export function SignupForm({
   levels,
@@ -40,8 +41,15 @@ export function SignupForm({
         />
       </Field>
 
-      <Field label="Programme" htmlFor="programme" error={errors.programme} hint="For example BSc Finance">
-        <Input id="programme" name="programme" autoComplete="organization-title" aria-invalid={!!errors.programme} />
+      <Field label="Programme" htmlFor="programme" error={errors.programme}>
+        <Select id="programme" name="programme" defaultValue="" aria-invalid={!!errors.programme}>
+          <option value="">Choose your programme</option>
+          {PROGRAMMES.map((programme) => (
+            <option key={programme} value={programme}>
+              {programme}
+            </option>
+          ))}
+        </Select>
       </Field>
 
       {levels.length > 0 && (

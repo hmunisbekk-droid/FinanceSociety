@@ -57,9 +57,9 @@ async function ensureUser(email, fullName, programme, role) {
   return id;
 }
 
-const studentId = await ensureUser("dev.student@example.com", "Dilnoza Karimova", "BSc Finance", "student");
-const editorId = await ensureUser("dev.editor@example.com", "Jasur Rakhimov", "BSc Finance", "editor");
-await ensureUser("dev.admin@example.com", "Admin Account", "BSc Finance", "admin");
+const studentId = await ensureUser("dev.student@example.com", "Dilnoza Karimova", "BSc (Hons) in Finance", "student");
+const editorId = await ensureUser("dev.editor@example.com", "Jasur Rakhimov", "BSc (Hons) in Finance", "editor");
+await ensureUser("dev.admin@example.com", "Admin Account", "BSc (Hons) in Finance", "admin");
 
 // ---------------------------------------------------------------------------
 // Subject: Level 5 · Module 1 becomes "Corporate Finance"
