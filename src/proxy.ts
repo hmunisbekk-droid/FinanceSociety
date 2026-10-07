@@ -30,11 +30,11 @@ export async function proxy(request: NextRequest) {
       },
     });
 
-    // Refreshes the session cookie when needed. Do not add logic between
-    // createServerClient and getUser(), or sessions may be dropped at random.
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // Refreshes the session cookie when needed and verifies the token's signature
+    // locally (no round trip to Supabase Auth). Do not add logic between
+    // createServerClient and getClaims(), or sessions may be dropped at random.
+    const { data } = await supabase.auth.getClaims();
+    const user = data?.claims ?? null;
 
     const { pathname } = request.nextUrl;
 

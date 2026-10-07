@@ -15,15 +15,17 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   if (!isSupabaseConfigured()) return null;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
+  // Verifies the session token locally (signature + expiry) instead of calling Supabase Auth
+  // on every request; the proxy already refreshed it if needed.
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+  if (!claims?.sub) return null;
 
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+  const { data: profile } = await supabase.from("profiles").select("*").eq("id", claims.sub).maybeSingle();
   if (!profile) return null;
 
-  return { id: user.id, email: user.email ?? profile.email, profile: profile as Profile };
+  const email = typeof claims.email === "string" ? claims.email : (profile as Profile).email;
+  return { id: claims.sub, email, profile: profile as Profile };
 });
 
 /** Redirects to the login page when nobody is logged in, or to /blocked for blocked accounts. */
